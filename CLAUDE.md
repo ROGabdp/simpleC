@@ -18,6 +18,39 @@ python simplec.py
 - 速度向量圖
 - 中心線速度分佈圖
 
+### SpecKit 工作流程
+
+本專案整合了 SpecKit 特性開發框架,用於結構化的功能規劃和實施:
+
+```bash
+# 1. 建立功能規格 (從自然語言描述)
+/speckit.specify <功能描述>
+
+# 2. 釐清規格中的不明確之處 (可選)
+/speckit.clarify
+
+# 3. 產生實施計畫 (技術設計)
+/speckit.plan
+
+# 4. 產生任務清單 (可執行的任務分解)
+/speckit.tasks
+
+# 5. 執行實施
+/speckit.implement
+
+# 6. 分析一致性和品質 (可選)
+/speckit.analyze
+
+# 7. 產生檢查清單 (可選)
+/speckit.checklist
+```
+
+**工作流程說明**:
+- 功能規格自動存放在 `specs/N-feature-name/` 目錄
+- 每個功能在獨立的 Git 分支上開發 (格式: `N-feature-name`)
+- 自動進行品質驗證和憲法檢查
+- 支援多個 Reynolds number 測試案例的批次開發
+
 ## 程式架構
 
 ### 數值方法
