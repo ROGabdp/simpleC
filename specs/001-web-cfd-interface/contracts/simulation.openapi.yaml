@@ -1,0 +1,266 @@
+openapi: 3.0.3
+info:
+  title: CFD 求解器 API
+  description: SIMPLEC 流場模擬 Web 介面 REST API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000
+    description: 開發伺服器
+
+paths:
+  /api/simulations:
+    post:
+      summary: 建立新的模擬任務
+      description: 提交流場參數並建立新的求解任務
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulationParameters'
+            example:
+              reynolds_number: 100
+              nx: 41
+              ny: 41
+              alpha_u: 0.7
+              alpha_p: 1.0
+              max_iter: 10000
+              tolerance: 0.00001
+              lid_velocity: 1.0
+      responses:
+        '200':
+          description: 任務建立成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    enum: [PENDING]
+                example:
+                  job_id: "123e4567-e89b-12d3-a456-426614174000"
+                  status: "PENDING"
+        '422':
+          description: 參數驗證失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /api/simulations/{job_id}:
+    get:
+      summary: 查詢任務狀態
+      description: 取得指定任務的當前狀態和基本資訊
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 任務資訊
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimulationJob'
+        '404':
+          description: 任務不存在
+
+    delete:
+      summary: 取消/刪除任務
+      description: 停止正在執行的任務或刪除已完成的任務
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 任務已取消/刪除
+        '404':
+          description: 任務不存在
+
+  /api/simulations/{job_id}/results:
+    get:
+      summary: 取得求解結果
+      description: 取得已完成任務的流場資料
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 流場結果資料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlowFieldResults'
+        '404':
+          description: 任務不存在或尚未完成
+        '400':
+          description: 任務未完成或失敗
+
+components:
+  schemas:
+    SimulationParameters:
+      type: object
+      required:
+        - reynolds_number
+      properties:
+        reynolds_number:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 100000
+          description: Reynolds 數
+        nx:
+          type: integer
+          minimum: 10
+          maximum: 200
+          default: 41
+        ny:
+          type: integer
+          minimum: 10
+          maximum: 200
+          default: 41
+        alpha_u:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 1.0
+          default: 0.7
+        alpha_p:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 1.0
+          default: 1.0
+        max_iter:
+          type: integer
+          minimum: 100
+          maximum: 100000
+          default: 10000
+        tolerance:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: true
+          maximum: 1.0
+          default: 0.00001
+        lid_velocity:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: true
+          default: 1.0
+
+    SimulationJob:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        parameters:
+          $ref: '#/components/schemas/SimulationParameters'
+        status:
+          type: string
+          enum: [PENDING, RUNNING, COMPLETED, FAILED]
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        error_message:
+          type: string
+          nullable: true
+
+    FlowFieldResults:
+      type: object
+      properties:
+        job_id:
+          type: string
+        pressure:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+          description: 2D 壓力場陣列 (ny x nx)
+        velocity_u:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+          description: 2D u速度場陣列 (ny x nx-1)
+        velocity_v:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+          description: 2D v速度場陣列 (ny-1 x nx)
+        x_coords:
+          type: array
+          items:
+            type: number
+        y_coords:
+          type: array
+          items:
+            type: number
+        convergence_history:
+          type: array
+          items:
+            type: object
+            properties:
+              iteration:
+                type: integer
+              residual_u:
+                type: number
+              residual_v:
+                type: number
+        final_residuals:
+          type: object
+          properties:
+            u:
+              type: number
+            v:
+              type: number
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string

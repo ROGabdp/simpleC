@@ -1,0 +1,22 @@
+# FastAPI 核心
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+python-multipart>=0.0.6
+
+# WebSocket 支援
+websockets>=12.0
+
+# CFD 求解器依賴
+numpy>=1.26.0
+matplotlib>=3.8.0
+
+# 測試框架
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.25.0
+
+# 開發工具
+black>=23.11.0
+flake8>=6.1.0
+mypy>=1.7.0
